@@ -8,7 +8,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
-public class Base58 {
+public class Helper {
 
     private static String BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
@@ -25,7 +25,7 @@ public class Base58 {
         return digest.digest(sha256.digest(input));
     }
 
-    public static String encode(final byte[] s) {
+    public static String encode_base58(final byte[] s) {
         int count = 0;
         for (byte c : s) {
             if (c == 0) count++;
@@ -48,7 +48,7 @@ public class Base58 {
         final byte[] temp = new byte[b.length + 4];
         System.arraycopy(b, 0, temp, 0, b.length);
         System.arraycopy(hash256(b), 0, temp, b.length, 4);
-        return encode(temp);
+        return encode_base58(temp);
     }
 
 }
