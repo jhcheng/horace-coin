@@ -13,19 +13,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 
+@Getter
 @AllArgsConstructor
 public class Tx implements Serializable {
 
-    @Getter
     private final int version;
-    @Getter
     private final TxIn[] txIns;
-    @Getter
     private final TxOut[] txOuts;
-    @Getter
     @Setter
-    private final int lockTime;
-    @Getter
+    private int lockTime;
     private final boolean testnet;
 
     public byte[] serialize() throws IOException {

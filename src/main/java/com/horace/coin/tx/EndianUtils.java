@@ -41,7 +41,7 @@ public class EndianUtils {
         if (value < 0x10000L) return concat(new byte[]{(byte) 0xfd}, intToLittleEndian(value, 2));
         if (value < 0x100000000L) return concat(new byte[]{(byte) 0xfe}, intToLittleEndian(value, 4));
         if (value < Long.parseUnsignedLong("0x10000000000000000", 16)) return concat(new byte[]{(byte) 0xfe}, intToLittleEndian(value, 8));
-        throw new ArithmeticException(String.format("integer too large: {}", value));
+        throw new ArithmeticException(String.format("integer too large: %d", value));
     }
 
     private static byte[] concat(final byte[] a, final byte[] b) {

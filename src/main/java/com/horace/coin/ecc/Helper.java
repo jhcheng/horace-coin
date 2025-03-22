@@ -10,7 +10,7 @@ import java.util.Arrays;
 
 public class Helper {
 
-    private static String BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+    private static final String BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
     @SneakyThrows
     public static byte[] hash256(byte[] input) {

@@ -5,11 +5,10 @@ import lombok.Getter;
 import java.math.BigInteger;
 import java.util.Objects;
 
+@Getter
 public class FieldElement {
 
-    @Getter
     private final BigInteger num;
-    @Getter
     private final BigInteger prime;
 
     public FieldElement(final BigInteger num, final BigInteger prime) {

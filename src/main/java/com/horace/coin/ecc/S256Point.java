@@ -64,10 +64,10 @@ public class S256Point extends FieldElementPoint {
 
     public static S256Point parse(final byte[] sec_bin) {
         if (sec_bin[0] == 0x04) {
-            return new S256Point(BigIntegers.fromUnsignedByteArray(sec_bin, 1, 33), BigIntegers.fromUnsignedByteArray(sec_bin, 33, 65));
+            return new S256Point(BigIntegers.fromUnsignedByteArray(sec_bin, 1, 32), BigIntegers.fromUnsignedByteArray(sec_bin, 33, 32));
         }
         final boolean is_even = sec_bin[0] == 0x02;
-        final S256Field x = new S256Field(BigIntegers.fromUnsignedByteArray(sec_bin, 1, 33));
+        final S256Field x = new S256Field(BigIntegers.fromUnsignedByteArray(sec_bin, 1, 64));
         final FieldElement alpha = x.pow(BigInteger.valueOf(3)).add(S256Constant.B);
         final FieldElement beta = alpha.sqrt();
         final S256Field even_beta;

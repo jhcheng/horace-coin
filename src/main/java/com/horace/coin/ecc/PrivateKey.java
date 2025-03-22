@@ -13,7 +13,7 @@ import java.util.Arrays;
 public class PrivateKey {
     private final BigInteger secret;
     @Getter
-    private S256Point point;
+    private final S256Point point;
     private final HMac hmac;
 
     public PrivateKey(final BigInteger secret) {

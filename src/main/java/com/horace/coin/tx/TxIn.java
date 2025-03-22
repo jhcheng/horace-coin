@@ -10,9 +10,9 @@ import java.io.InputStream;
 
 /**
  * @param prevTx    prev_tx is 32 bytes, little endian
- * @Param prevIndex prev_index is an integer in 4 bytes, little endian
- * @Param scriptSig use Script.parse to get the ScriptSig
- * @Param sequence  sequence is an integer in 4 bytes, little-endian
+ * @param prevIndex prev_index is an integer in 4 bytes, little endian
+ * @param scriptSig use Script.parse to get the ScriptSig
+ * @param sequence  sequence is an integer in 4 bytes, little-endian
  */
 public record TxIn(byte[] prevTx, int prevIndex, Script scriptSig, int sequence) {
 

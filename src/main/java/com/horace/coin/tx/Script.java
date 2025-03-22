@@ -1,24 +1,20 @@
 package com.horace.coin.tx;
 
-import lombok.Getter;
 import lombok.SneakyThrows;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 import java.util.stream.Collectors;
 
-public class Script {
-
-    @Getter
-    private byte[][] cmds;
-
-    public Script(final byte[]... cmds) {
-        this.cmds = cmds;
-    }
+public record Script(byte[]... cmds) {
 
     public static Script parse(final InputStream in) throws Exception {
         // get the length of the entire field
@@ -65,7 +61,7 @@ public class Script {
     public byte[] raw_serialize() throws Exception {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             for (byte[] cmd : cmds) {
-                if (cmd.length == 1 && (Byte.toUnsignedInt(cmd[0]) > 78 || Byte.toUnsignedInt(cmd[0]) == 0)) {
+                if (isOPCode(cmd) > 0) {
                     out.write(EndianUtils.intToLittleEndian(cmd[0], 1));
                 } else {
                     int len = cmd.length;
@@ -95,15 +91,79 @@ public class Script {
         return Arrays.concatenate(EndianUtils.encodeVarInt(result.length), result);
     }
 
+    public Script add(Script other) {
+        final byte[][] new_cmds = new byte[cmds.length + other.cmds.length][];
+        System.arraycopy(cmds, 0, new_cmds, 0, cmds.length);
+        System.arraycopy(other.cmds, 0, new_cmds, cmds.length, other.cmds.length);
+        return new Script(new_cmds);
+    }
+
+    public boolean evaluate(BigInteger z) {
+        Stack<byte[]> stack = new Stack<byte[]>();
+        Stack<byte[]> altstack = new Stack<byte[]>();
+        List<byte[]> cmdList = java.util.Arrays.stream(cmds).collect(Collectors.toList());
+        while (!cmdList.isEmpty()) {
+            byte[] cmd = cmdList.remove(0);
+            int code = isOPCode(cmd);
+            if (code > 0) {
+                final OP op = new OP();
+                final Class clazz = op.getClass();
+                final String methodName = OP.OP_CODE_NAMES[code].equals("") ? "op_nop" : OP.OP_CODE_NAMES[code].toLowerCase();
+                try {
+                    final Method method;
+                    final Object[] args;
+                    if (code == 99 || code == 100) {
+                        method = clazz.getMethod(methodName, Stack.class, List.class);
+                        args = new Object[] {stack, cmdList};
+                    } else if (code == 107 || code == 108) {
+                        method = clazz.getMethod(methodName, Stack.class, Stack.class);
+                        args = new Object[] {stack, altstack};
+                    } else if (code == 172 || code == 173 || code == 174 || code == 175) {
+                        method = clazz.getMethod(methodName, Stack.class, BigInteger.class);
+                        args = new Object[] {stack, z};
+                    } else {
+                        method = clazz.getMethod(methodName, Stack.class);
+                        args = new Object[] {stack};
+                    }
+                    final boolean result = (boolean) method.invoke(op, args);
+                    if (!result) return false;
+                } catch (NoSuchMethodException e) {
+                    return false;
+                } catch (InvocationTargetException e) {
+                    return false;
+                } catch (IllegalAccessException e) {
+                    return false;
+                }
+            } else {
+                stack.push(cmd);
+            }
+        }
+        if (stack.isEmpty()) return false;
+        if (stack.pop().length == 0) return false;
+        return true;
+    }
+
+    /**
+     * @param b
+     * @return -1 if not OP_CODE, else return the OP_CODE
+     */
+    private int isOPCode(byte[] b) {
+        if (b.length == 1) {
+            final int n = Byte.toUnsignedInt(b[0]);
+            if (n == 0 || n > 78) return n;
+        }
+        return -1;
+    }
+
     @Override
     public String toString() {
         ArrayList<String> list = new ArrayList<>();
         for (byte[] cmd : cmds) {
             if (cmd.length == 1 && Byte.toUnsignedInt(cmd[0]) >= 78) {
                 int code = Byte.toUnsignedInt(cmd[0]);
-                OP.OP_CODE_NAMES names = OP.OP_CODE_NAMES.find(code);
-                if (names != null) {
-                    list.add(names.toString());
+                final String name = OP.OP_CODE_NAMES[code];
+                if (!"".equals(name)) {
+                    list.add(name);
                 } else {
                     list.add(String.format("OP_[%d]", code));
                 }
@@ -111,7 +171,7 @@ public class Script {
                 list.add(Hex.toHexString(cmd));
             }
         }
-        return list.stream().collect(Collectors.joining(" "));
+        return String.join(" ", list);
     }
 
 }
