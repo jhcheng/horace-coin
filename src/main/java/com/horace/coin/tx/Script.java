@@ -39,12 +39,12 @@ public record Script(byte[]... cmds) {
                 count += current;
             } else if (current == 76) {
                 // op_pushdata1
-                int data_length = (int) EndianUtils.littleEndianToInt(in.readNBytes(1));
+                int data_length = EndianUtils.littleEndianToInt(in.readNBytes(1)).intValueExact();
                 cmds.add(in.readNBytes(data_length));
                 count += data_length + 1;
             } else if (current == 77) {
                 // op_pushdata2
-                int data_length = (int) EndianUtils.littleEndianToInt(in.readNBytes(2));
+                int data_length = EndianUtils.littleEndianToInt(in.readNBytes(2)).intValueExact();
                 cmds.add(in.readNBytes(data_length));
                 count += data_length + 2;
             } else {

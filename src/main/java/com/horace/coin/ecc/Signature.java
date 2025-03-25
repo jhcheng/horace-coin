@@ -1,10 +1,9 @@
 package com.horace.coin.ecc;
 
+import com.horace.coin.Helper;
 import lombok.SneakyThrows;
 import org.bouncycastle.util.BigIntegers;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
@@ -24,7 +23,7 @@ public record Signature(BigInteger r, BigInteger s) {
     @SneakyThrows
     private byte[] buildValueArray(final BigInteger value) {
         byte[] vbin = BigIntegers.asUnsignedByteArray(32, value);
-        vbin = lstrip(vbin, (byte) 0x00);
+        vbin = Helper.lstrip(vbin, (byte) 0x00);
         if ((vbin[0] & 0xFF) >= 0x80) {
             byte[] tmp = new byte[vbin.length + 1];
             tmp[0] = 0x00;
@@ -36,20 +35,6 @@ public record Signature(BigInteger r, BigInteger s) {
         result[1] = Integer.valueOf(vbin.length).byteValue();
         System.arraycopy(vbin, 0, result, 2, vbin.length);
         return result;
-    }
-
-    private byte[] lstrip(byte[] bytes, byte b) throws IOException {
-        try (final ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream()) {
-            boolean startCopy = false;
-            for (byte a : bytes) {
-                if (startCopy) arrayOutputStream.write(new byte[]{a});
-                else if (a != b && !startCopy) {
-                    arrayOutputStream.write(new byte[]{a});
-                    startCopy = true;
-                }
-            }
-            return arrayOutputStream.toByteArray();
-        }
     }
 
     public static Signature parse(byte[] derSignature) {

@@ -34,9 +34,9 @@ public class TxIn {
     @SneakyThrows
     public static TxIn psrse(final InputStream s) {
         final byte[] prevTx = Arrays.reverse(s.readNBytes(32));
-        final int prevIndex = (int) EndianUtils.littleEndianToInt(s.readNBytes(4));
+        final int prevIndex = EndianUtils.littleEndianToInt(s.readNBytes(4)).intValue();
         final Script sig = Script.parse(s);
-        final int sequence = (int) EndianUtils.littleEndianToInt(s.readNBytes(4));
+        final int sequence = EndianUtils.littleEndianToInt(s.readNBytes(4)).intValue();
         return new TxIn(prevTx, prevIndex, sig, sequence);
     }
 

@@ -4,8 +4,10 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigInteger;
 import java.util.HexFormat;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class HelperTest {
@@ -52,6 +54,23 @@ class HelperTest {
         byte[] h160 = HexFormat.of().parseHex("74d691da1574e6b3c192ecfb52cc8984ee7b6c56");
         assertEquals("3CLoMMyuoDQTPRD3XYZtCvgvkadrAdvdXh", Helper.h160_to_p2sh_address(h160, false));
         assertEquals("2N3u1R6uwQfuobCqbCgBkpsgBxvr1tZpe7B", Helper.h160_to_p2sh_address(h160, true));
-
     }
+
+    @Test
+    void bits_to_target() {
+        BigInteger target = Helper.bitsToTarget(HexFormat.of().parseHex("e93c0118"));
+        byte[] filledBytes = new byte[32];
+        byte[] targetBytes = target.toByteArray();
+        System.arraycopy(target.toByteArray(), 0, filledBytes, 32 - targetBytes.length, targetBytes.length);
+        assertArrayEquals(HexFormat.of().parseHex("0000000000000000013ce9000000000000000000000000000000000000000000"),
+                filledBytes);
+    }
+
+    @Test
+    void test_calculate_new_bits() {
+        byte[] prev_bits = HexFormat.of().parseHex("54d80118");
+        long time_differential = 302400;
+        assertArrayEquals(HexFormat.of().parseHex("00157617"), Helper.calculate_new_bits(prev_bits, time_differential));
+    }
+
 }

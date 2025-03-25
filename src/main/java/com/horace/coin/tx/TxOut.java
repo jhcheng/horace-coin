@@ -14,7 +14,7 @@ public record TxOut(long amount, Script scriptPubkey) {
 
     @SneakyThrows
     public static TxOut parse(final InputStream s) {
-        return new TxOut(EndianUtils.littleEndianToInt(s.readNBytes(8)), Script.parse(s));
+        return new TxOut(EndianUtils.littleEndianToInt(s.readNBytes(8)).longValueExact(), Script.parse(s));
     }
 
     public byte[] serialize() throws IOException {

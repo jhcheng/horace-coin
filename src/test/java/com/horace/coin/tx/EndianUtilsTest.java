@@ -27,17 +27,17 @@ class EndianUtilsTest {
 
     @Test
     void littleEndianToInt_01() {
-        assertEquals(10011545, EndianUtils.littleEndianToInt(hexFormat.parseHex("99c3980000000000")));
+        assertEquals(10011545, EndianUtils.littleEndianToInt(hexFormat.parseHex("99c3980000000000")).intValue());
     }
 
     @Test
     void littleEndianToInt_02() {
-        assertEquals(32454049, EndianUtils.littleEndianToInt(hexFormat.parseHex("a135ef0100000000")));
+        assertEquals(32454049, EndianUtils.littleEndianToInt(hexFormat.parseHex("a135ef0100000000")).intValue());
     }
 
     @Test
     void littleEndianToInt_03() {
-        assertEquals(4294967295L, EndianUtils.littleEndianToInt(hexFormat.parseHex("ffffffff")));
+        assertEquals(4294967295L, EndianUtils.littleEndianToInt(hexFormat.parseHex("ffffffff")).longValue());
     }
 
 }

@@ -1,5 +1,6 @@
 package com.horace.coin;
 
+import com.horace.coin.tx.EndianUtils;
 import lombok.SneakyThrows;
 import org.bouncycastle.jcajce.provider.digest.RIPEMD160;
 import org.bouncycastle.util.BigIntegers;
@@ -17,6 +18,7 @@ public class Helper {
 
     private static final String BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
     private static final BigInteger FIFTY_EIGHT = BigInteger.valueOf(58);
+    private static final long TWO_WEEKS = 60 * 60 * 24 * 14;
 
     @SneakyThrows
     public static byte[] hash256(byte[] input) {
@@ -116,6 +118,60 @@ public class Helper {
     public static String h160_to_p2sh_address(byte[] h160, boolean testnet) {
         byte[] prefix = testnet ? new byte[]{(byte) 0xc4} : new byte[]{0x05};
         return encode_base58_checksum(org.bouncycastle.util.Arrays.concatenate(prefix, h160));
+    }
+
+    public static BigInteger bitsToTarget(byte[] bits) {
+        int exponent = bits[3] & 0xFF;
+        int coefficient = EndianUtils.littleEndianToInt(Arrays.copyOf(bits, 3)).intValueExact();
+        return BigInteger.valueOf(coefficient).multiply(BigInteger.valueOf(256).pow(exponent - 3));
+    }
+
+    @SneakyThrows
+    public static byte[] targetToBits(BigInteger target) {
+        byte[] raw_bytes = lstrip(target.toByteArray(), (byte) 0x00);
+        int exponent;
+        byte[] coefficient;
+        if (raw_bytes[0] > 0x7f) {
+            exponent = raw_bytes.length + 1;
+            coefficient = new byte[]{0x00, raw_bytes[0], raw_bytes[1]};
+        } else {
+            exponent = raw_bytes.length;
+            coefficient = Arrays.copyOf(raw_bytes, Math.min(3, raw_bytes.length));
+        }
+        // Reverse coefficient for little-endian format
+        byte[] newBits = new byte[4];
+        for (int i = 0; i < coefficient.length; i++) {
+            newBits[2 - i] = coefficient[i]; // Reverse first 3 bytes
+        }
+        newBits[3] = (byte) exponent; // Append exponent
+        return newBits;
+    }
+
+    public static byte[] lstrip(byte[] bytes, byte b) {
+        int startIdx = 0;
+        for (int i = 0; i < bytes.length; i++) {
+            if (bytes[i] != b) {
+                startIdx = i;
+                break;
+            }
+        }
+        return Arrays.copyOfRange(bytes, startIdx, bytes.length);
+    }
+
+    public static byte[] calculate_new_bits(byte[] previous_bits, long time_differential) {
+        if (time_differential > TWO_WEEKS * 4) {
+            time_differential = TWO_WEEKS * 4;
+        }
+        if (time_differential < TWO_WEEKS / 4) {
+            time_differential = TWO_WEEKS / 4;
+        }
+        // Convert previous bits to target
+        BigInteger previousTarget = bitsToTarget(previous_bits);
+        BigInteger newTarget = previousTarget.multiply(BigInteger.valueOf(time_differential))
+                .divide(BigInteger.valueOf(TWO_WEEKS));
+
+        // Convert new target back to bits
+        return targetToBits(newTarget);
     }
 
 }

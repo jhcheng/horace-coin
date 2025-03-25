@@ -12,7 +12,6 @@ import org.bouncycastle.util.encoders.Hex;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 
 @Getter
 @AllArgsConstructor
@@ -52,7 +51,7 @@ public class Tx implements Serializable {
     }
 
     public static Tx parse(final InputStream in, final boolean testnet) throws IOException {
-        final int version = (int) EndianUtils.littleEndianToInt(in.readNBytes(4));
+        final int version = EndianUtils.littleEndianToInt(in.readNBytes(4)).intValueExact();
         final int num_inputs = (int) EndianUtils.readVarInt(in);
         final TxIn[] txIns = new TxIn[num_inputs];
         for (int i = 0; i < num_inputs; i++) {
@@ -63,7 +62,7 @@ public class Tx implements Serializable {
         for (int i = 0; i < num_outputs; i++) {
             txOuts[i] = TxOut.parse(in);
         }
-        final int lockTime = (int) EndianUtils.littleEndianToInt(in.readNBytes(4));
+        final int lockTime = EndianUtils.littleEndianToInt(in.readNBytes(4)).intValueExact();
         return new Tx(version, txIns, txOuts, lockTime, testnet);
     }
 
@@ -146,6 +145,18 @@ public class Tx implements Serializable {
         byte[] sec = privateKey.getPoint().sec();
         txIns[input_index].setScriptSig(new Script(sig, sec));
         return verify_input(input_index);
+    }
+
+    public boolean is_coinbase() {
+        return txIns.length == 1
+                && java.util.Arrays.equals(txIns[0].getPrevTx(), new byte[32])
+                && txIns[0].getPrevIndex() == 0xffffffff
+                ;
+    }
+
+    public Integer coinbase_height() {
+        if (!is_coinbase()) return null;
+        return EndianUtils.littleEndianToInt(txIns[0].getScriptSig().cmds()[0]).intValueExact();
     }
 
 }
