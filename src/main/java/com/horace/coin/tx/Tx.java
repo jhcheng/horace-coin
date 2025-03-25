@@ -10,11 +10,9 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 
 @Getter
 @AllArgsConstructor
@@ -84,17 +82,23 @@ public class Tx implements Serializable {
         return input_sum - output_sum;
     }
 
-    public BigInteger sig_hash(int input_index) throws IOException {
+    public BigInteger sig_hash(int input_index, Script redeem_script) throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             out.write(EndianUtils.intToLittleEndian(version, 4));
             out.write(EndianUtils.encodeVarInt(txIns.length));
             for (int i = 0; i < txIns.length; i++) {
                 final TxIn txIn = txIns[i];
+                Script script_sig;
                 if (i == input_index) {
-                    out.write(new TxIn(txIn.getPrevTx(), txIn.getPrevIndex(), txIn.scriptPubkey(testnet), txIn.getSequence()).serialize());
+                    if (redeem_script != null) {
+                        script_sig = redeem_script;
+                    } else {
+                        script_sig = txIn.scriptPubkey(testnet);
+                    }
                 } else {
-                    out.write(new TxIn(txIn.getPrevTx(), txIn.getPrevIndex(), new Script(), txIn.getSequence()).serialize());
+                    script_sig = new Script();
                 }
+                out.write(new TxIn(txIn.getPrevTx(), txIn.getPrevIndex(), script_sig, txIn.getSequence()).serialize());
             }
             out.write(EndianUtils.encodeVarInt(txOuts.length));
             for (TxOut txOut : txOuts) {
@@ -107,11 +111,21 @@ public class Tx implements Serializable {
         }
     }
 
+    public BigInteger sig_hash(int input_index) throws IOException {
+        return sig_hash(input_index, null);
+    }
+
     @SneakyThrows
     public boolean verify_input(int input_index) {
         TxIn txIn = txIns[input_index];
         Script script_pubkey = txIn.scriptPubkey(testnet);
-        BigInteger z = sig_hash(input_index);
+        Script redeem_script;
+        if (script_pubkey.is_p2sh_script_pubkey()) {
+            byte[] cmd = txIn.getScriptSig().cmds()[txIn.getScriptSig().cmds().length - 1];
+            byte[] raw_redeem = Arrays.concatenate(EndianUtils.encodeVarInt(cmd.length), cmd);
+            redeem_script = Script.parse(new ByteArrayInputStream(raw_redeem));
+        } else redeem_script = null;
+        BigInteger z = sig_hash(input_index, redeem_script);
         Script combined = txIn.getScriptSig().add(script_pubkey);
         return combined.evaluate(z);
     }

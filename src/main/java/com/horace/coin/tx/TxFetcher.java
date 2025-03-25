@@ -8,6 +8,7 @@ import okhttp3.Response;
 import org.bouncycastle.util.Arrays;
 
 import java.io.ByteArrayInputStream;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.Map;
@@ -15,7 +16,11 @@ import java.util.Map;
 public class TxFetcher {
 
     private static final Map<String, Tx> cache = new HashMap<>();
-    private static final OkHttpClient client = new OkHttpClient();
+    private static final OkHttpClient client = new OkHttpClient.Builder()
+            .retryOnConnectionFailure(true)
+            .readTimeout(Duration.ofSeconds(5))
+            .callTimeout(Duration.ofSeconds(5))
+            .build();
     private static final HexFormat hexFormat = HexFormat.of();
 
     public static String getUrl(final boolean testnet) {

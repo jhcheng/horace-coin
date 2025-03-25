@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 /**
  * https://github.com/bitcoin/bitcoin/blob/master/src/script/interpreter.cpp
@@ -33,12 +34,12 @@ public class OP {
             // Check if last byte's MSB is set
             if ((bytes[bytes.length - 1] & 0x80) != 0) {
                 if (negative) {
-                    result.write((byte)0x80);
+                    result.write((byte) 0x80);
                 } else {
-                    result.write((byte)0);
+                    result.write((byte) 0);
                 }
             } else if (negative) {
-                bytes[bytes.length - 1] |= (byte)0x80;
+                bytes[bytes.length - 1] |= (byte) 0x80;
                 return bytes;
             }
             return result.toByteArray();
@@ -85,58 +86,72 @@ public class OP {
         stack.push(encode_num(2));
         return true;
     }
+
     public boolean op_3(Stack<byte[]> stack) throws IOException {
         stack.push(encode_num(3));
         return true;
     }
+
     public boolean op_4(Stack<byte[]> stack) throws IOException {
         stack.push(encode_num(4));
         return true;
     }
+
     public boolean op_5(Stack<byte[]> stack) throws IOException {
         stack.push(encode_num(5));
         return true;
     }
+
     public boolean op_6(Stack<byte[]> stack) throws IOException {
         stack.push(encode_num(6));
         return true;
     }
+
     public boolean op_7(Stack<byte[]> stack) throws IOException {
         stack.push(encode_num(7));
         return true;
     }
+
     public boolean op_8(Stack<byte[]> stack) throws IOException {
         stack.push(encode_num(8));
         return true;
     }
+
     public boolean op_9(Stack<byte[]> stack) throws IOException {
         stack.push(encode_num(9));
         return true;
     }
+
     public boolean op_10(Stack<byte[]> stack) throws IOException {
         stack.push(encode_num(10));
         return true;
     }
+
     public boolean op_11(Stack<byte[]> stack) throws IOException {
         stack.push(encode_num(11));
         return true;
     }
+
     public boolean op_12(Stack<byte[]> stack) throws IOException {
         stack.push(encode_num(12));
         return true;
     }
+
     public boolean op_13(Stack<byte[]> stack) throws IOException {
         stack.push(encode_num(13));
         return true;
     }
+
     public boolean op_14(Stack<byte[]> stack) throws IOException {
         stack.push(encode_num(14));
         return true;
     }
+
     public boolean op_15(Stack<byte[]> stack) throws IOException {
         stack.push(encode_num(15));
         return true;
     }
+
     public boolean op_16(Stack<byte[]> stack) throws IOException {
         stack.push(encode_num(16));
         return true;
@@ -158,11 +173,9 @@ public class OP {
             if (item == 99 || item == 100) {  // Nested IF/ELSEIF
                 numEndifsNeeded++;
                 currentArray.add(item);
-            }
-            else if (numEndifsNeeded == 1 && item == 103) {  // ELSE
+            } else if (numEndifsNeeded == 1 && item == 103) {  // ELSE
                 currentArray = falseItems;
-            }
-            else if (item == 104) {  // ENDIF
+            } else if (item == 104) {  // ENDIF
                 if (numEndifsNeeded == 1) {
                     found = true;
                     break;
@@ -170,8 +183,7 @@ public class OP {
                     numEndifsNeeded--;
                     currentArray.add(item);
                 }
-            }
-            else {
+            } else {
                 currentArray.add(item);
             }
         }
@@ -203,7 +215,7 @@ public class OP {
                 currentArray.add(item);
             } else if (numEndifsNeeded == 1 && item == 103) {
                 currentArray = falseItems;
-            }  else if (item == 104) {
+            } else if (item == 104) {
                 if (numEndifsNeeded == 1) {
                     found = true;
                     break;
@@ -211,7 +223,7 @@ public class OP {
                     numEndifsNeeded--;
                     currentArray.add(item);
                 }
-            }  else {
+            } else {
                 currentArray.add(item);
             }
         }
@@ -694,8 +706,34 @@ public class OP {
         return op_checksig(stack, z) || op_verify(stack);
     }
 
+    @SneakyThrows
     public boolean op_checkmultisig(Stack<byte[]> stack, BigInteger z) {
-        throw new RuntimeException("not implemented");
+        if (stack.isEmpty()) return false;
+        int n = (int) decode_num(stack.pop());
+        if (stack.size() < n + 1) return false;
+        List<byte[]> sec_pubkeys = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            sec_pubkeys.add(stack.pop());
+        }
+        int m = (int) decode_num(stack.pop());
+        if (stack.size() < m + 1) return false;
+        List<byte[]> der_signatures = new ArrayList<>();
+        for (int i = 0; i < m; i++) {
+            byte[] element = stack.pop();
+            der_signatures.add(removeLastByte(element));
+        }
+        stack.pop();
+        List<S256Point> points = sec_pubkeys.stream().map(S256Point::parse).collect(Collectors.toList());
+        List<Signature> sigs = der_signatures.stream().map(Signature::parse).collect(Collectors.toList());
+        for (Signature sig : sigs) {
+            if (points.size() == 0) return false;
+            while (points.size() > 0) {
+                S256Point point = points.remove(0);  // pop(0)
+                if (point.verify(z, sig)) break;
+            }
+        }
+        stack.push(encode_num(1));
+        return true;
     }
 
     public boolean op_checkmultisigverify(Stack<byte[]> stack, BigInteger z) {

@@ -3,6 +3,7 @@ package com.horace.coin.tx;
 import lombok.SneakyThrows;
 import org.bouncycastle.util.Arrays;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -98,15 +99,16 @@ public record Script(byte[]... cmds) {
         return new Script(new_cmds);
     }
 
+    @SneakyThrows
     public boolean evaluate(BigInteger z) {
         Stack<byte[]> stack = new Stack<byte[]>();
         Stack<byte[]> altstack = new Stack<byte[]>();
         List<byte[]> cmdList = java.util.Arrays.stream(cmds).collect(Collectors.toList());
         while (!cmdList.isEmpty()) {
-            byte[] cmd = cmdList.remove(0);
+            byte[] cmd = cmdList.remove(0);  // pop(0)
             int code = isOPCode(cmd);
+            final OP op = new OP();
             if (code > 0) {
-                final OP op = new OP();
                 final Class clazz = op.getClass();
                 final String methodName = OP.OP_CODE_NAMES[code].equals("") ? "op_nop" : OP.OP_CODE_NAMES[code].toLowerCase();
                 try {
@@ -114,16 +116,16 @@ public record Script(byte[]... cmds) {
                     final Object[] args;
                     if (code == 99 || code == 100) {
                         method = clazz.getMethod(methodName, Stack.class, List.class);
-                        args = new Object[] {stack, cmdList};
+                        args = new Object[]{stack, cmdList};
                     } else if (code == 107 || code == 108) {
                         method = clazz.getMethod(methodName, Stack.class, Stack.class);
-                        args = new Object[] {stack, altstack};
+                        args = new Object[]{stack, altstack};
                     } else if (code == 172 || code == 173 || code == 174 || code == 175) {
                         method = clazz.getMethod(methodName, Stack.class, BigInteger.class);
-                        args = new Object[] {stack, z};
+                        args = new Object[]{stack, z};
                     } else {
                         method = clazz.getMethod(methodName, Stack.class);
-                        args = new Object[] {stack};
+                        args = new Object[]{stack};
                     }
                     final boolean result = (boolean) method.invoke(op, args);
                     if (!result) return false;
@@ -136,6 +138,17 @@ public record Script(byte[]... cmds) {
                 }
             } else {
                 stack.push(cmd);
+                if (is_p2sh_script_pubkey()) {
+                    cmdList.remove(cmdList.size() - 1);  // pop
+                    byte[] h160 = cmdList.remove(cmdList.size() - 1); // h160 = pop
+                    cmdList.remove(cmdList.size() - 1);  // pop
+                    if (!op.op_hash160(stack)) return false;
+                    stack.push(h160);
+                    if (!op.op_equal(stack)) return false;
+                    if (!op.op_verify(stack)) return false;
+                    byte[] redeem_script = Arrays.concatenate(EndianUtils.encodeVarInt(cmd.length), cmd);
+                    cmdList.addAll(List.of(Script.parse(new ByteArrayInputStream(redeem_script)).cmds));
+                }
             }
         }
         if (stack.isEmpty()) return false;
@@ -155,8 +168,25 @@ public record Script(byte[]... cmds) {
         return -1;
     }
 
+    private boolean is_p2pkh_script_pubkey() {
+        return cmds.length == 5 && cmds[0][0] == 0x76
+                && cmds[1][0] == 0xa9
+                && (cmds[2].length == 20)
+                && cmds[3][0] == 0x88 && cmds[4][0] == 0xa;
+    }
+
+    public boolean is_p2sh_script_pubkey() {
+        return cmds.length == 3 && cmds[0][0] == 0xa9
+                && cmds[1].length == 20
+                && cmds[2][0] == 0x87;
+    }
+
     public static Script p2pkh_script(byte[] h160) {
         return new Script(new byte[]{0x76}, new byte[]{(byte) 0xa9}, h160, new byte[]{(byte) 0x88}, new byte[]{(byte) 0xac});
+    }
+
+    public static Script p2sh_script(byte[] h160) {
+        return new Script(new byte[]{(byte) 0xa9}, h160, new byte[]{(byte) 0x87});
     }
 
     @Override

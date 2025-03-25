@@ -1,15 +1,17 @@
 package com.horace.coin.ecc;
 
 import lombok.SneakyThrows;
-import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
+import java.util.HexFormat;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class S256PointTest {
+
+    private HexFormat hexFormat = HexFormat.of();
 
     @Test
     public void test01() {
@@ -56,37 +58,40 @@ class S256PointTest {
     @Test
     public void testSec1() {
         final PrivateKey privateKey = new PrivateKey(BigInteger.valueOf(5000));
-        assertEquals("04ffe558e388852f0120e46af2d1b370f85854a8eb0841811ece0e3e03d282d57c315dc72890a4f10a1481c031b03b351b0dc79901ca18a00cf009dbdb157a1d10", Hex.toHexString(privateKey.getPoint().sec()));
+        assertEquals("04ffe558e388852f0120e46af2d1b370f85854a8eb0841811ece0e3e03d282d57c315dc72890a4f10a1481c031b03b351b0dc79901ca18a00cf009dbdb157a1d10",
+                hexFormat.formatHex(privateKey.getPoint().sec(false)));
     }
 
     @Test
     public void testSec2() {
         final PrivateKey privateKey = new PrivateKey(BigInteger.valueOf(2018).pow(5));
-        assertEquals("04027f3da1918455e03c46f659266a1bb5204e959db7364d2f473bdf8f0a13cc9dff87647fd023c13b4a4994f17691895806e1b40b57f4fd22581a4f46851f3b06", Hex.toHexString(privateKey.getPoint().sec()));
+        assertEquals("04027f3da1918455e03c46f659266a1bb5204e959db7364d2f473bdf8f0a13cc9dff87647fd023c13b4a4994f17691895806e1b40b57f4fd22581a4f46851f3b06",
+                hexFormat.formatHex(privateKey.getPoint().sec(false)));
     }
 
     @Test
     public void testSec3() {
         final PrivateKey privateKey = new PrivateKey(new BigInteger("deadbeef12345", 16));
-        assertEquals("04d90cd625ee87dd38656dd95cf79f65f60f7273b67d3096e68bd81e4f5342691f842efa762fd59961d0e99803c61edba8b3e3f7dc3a341836f97733aebf987121", Hex.toHexString(privateKey.getPoint().sec()));
+        assertEquals("04d90cd625ee87dd38656dd95cf79f65f60f7273b67d3096e68bd81e4f5342691f842efa762fd59961d0e99803c61edba8b3e3f7dc3a341836f97733aebf987121",
+                hexFormat.formatHex(privateKey.getPoint().sec(false)));
     }
 
     @Test
     public void testSecCompressed1() {
         final PrivateKey privateKey = new PrivateKey(BigInteger.valueOf(5001));
-        assertEquals("0357a4f368868a8a6d572991e484e664810ff14c05c0fa023275251151fe0e53d1", Hex.toHexString(privateKey.getPoint().sec(true)));
+        assertEquals("0357a4f368868a8a6d572991e484e664810ff14c05c0fa023275251151fe0e53d1", hexFormat.formatHex(privateKey.getPoint().sec(true)));
     }
 
     @Test
     public void testSecCompressed2() {
         final PrivateKey privateKey = new PrivateKey(BigInteger.valueOf(2019).pow(5));
-        assertEquals("02933ec2d2b111b92737ec12f1c5d20f3233a0ad21cd8b36d0bca7a0cfa5cb8701", Hex.toHexString(privateKey.getPoint().sec(true)));
+        assertEquals("02933ec2d2b111b92737ec12f1c5d20f3233a0ad21cd8b36d0bca7a0cfa5cb8701", hexFormat.formatHex(privateKey.getPoint().sec(true)));
     }
 
     @Test
     public void testSecCompressed3() {
         final PrivateKey privateKey = new PrivateKey(new BigInteger("deadbeef54321", 16));
-        assertEquals("0296be5b1292f6c856b3c5654e886fc13511462059089cdf9c479623bfcbe77690", Hex.toHexString(privateKey.getPoint().sec(true)));
+        assertEquals("0296be5b1292f6c856b3c5654e886fc13511462059089cdf9c479623bfcbe77690", hexFormat.formatHex(privateKey.getPoint().sec(true)));
     }
 
     @Test
@@ -110,11 +115,12 @@ class S256PointTest {
     @SneakyThrows
     @Test
     void verify() {
-        S256Point point = S256Point.parse(Hex.decode("0349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278a"));
-        Signature signature = Signature.parse(Hex.decode("3045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031c" +
+        S256Point point = S256Point.parse(hexFormat.parseHex("0349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278a"));
+        Signature signature = Signature.parse(hexFormat.parseHex("3045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031c" +
                 "cfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9" +
                 "c8e10615bed"));
         BigInteger z = new BigInteger("27e0c5994dec7824e56dec6b2fcb342eb7cdb0d0957c2fce9882f715e85d81a6", 16);
         assertTrue(point.verify(z, signature));
     }
+
 }

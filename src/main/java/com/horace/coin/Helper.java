@@ -100,4 +100,22 @@ public class Helper {
         return output;
     }
 
+    public static String h160_to_p2pkh_address(byte[] h160) {
+        return h160_to_p2pkh_address(h160, false);
+    }
+
+    public static String h160_to_p2pkh_address(byte[] h160, boolean testnet) {
+        byte[] prefix = testnet ? new byte[]{0x6f} : new byte[]{0x00};
+        return encode_base58_checksum(org.bouncycastle.util.Arrays.concatenate(prefix, h160));
+    }
+
+    public static String h160_to_p2sh_address(byte[] h160) {
+        return h160_to_p2sh_address(h160, false);
+    }
+
+    public static String h160_to_p2sh_address(byte[] h160, boolean testnet) {
+        byte[] prefix = testnet ? new byte[]{(byte) 0xc4} : new byte[]{0x05};
+        return encode_base58_checksum(org.bouncycastle.util.Arrays.concatenate(prefix, h160));
+    }
+
 }

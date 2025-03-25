@@ -2,7 +2,11 @@ package com.horace.coin.tx;
 
 import com.horace.coin.Helper;
 import com.horace.coin.ecc.PrivateKey;
+import com.horace.coin.ecc.S256Point;
+import com.horace.coin.ecc.Signature;
 import lombok.SneakyThrows;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.Test;
 
@@ -197,6 +201,44 @@ class TxTest {
                         "84fe8ed83af7a3097005b2f9c60bff71d35bd795f54b67ffffffff01d0754100000000001976a9" +
                         "14ad346f8eb57dee9a37981716e498120ae80e44f788ac00000000"
                 , format.formatHex(tx.serialize()));
+    }
+
+    @SneakyThrows
+    @Test
+    void test_redeem_script() {
+        HexFormat hexFormat = HexFormat.of();
+        String hex_tx = "0100000001868278ed6ddfb6c1ed3ad5f8181eb0c7a385aa0836f01d5e4789e6" +
+                "bd304d87221a000000db00483045022100dc92655fe37036f47756db8102e0d7d5e28b3beb83a8" +
+                "fef4f5dc0559bddfb94e02205a36d4e4e6c7fcd16658c50783e00c341609977aed3ad00937bf4e" +
+                "e942a8993701483045022100da6bee3c93766232079a01639d07fa869598749729ae323eab8eef" +
+                "53577d611b02207bef15429dcadce2121ea07f233115c6f09034c0be68db99980b9a6c5e754022" +
+                "01475221022626e955ea6ea6d98850c994f9107b036b1334f18ca8830bfff1295d21cfdb702103" +
+                "b287eaf122eea69030a0e9feed096bed8045c8b98bec453e1ffac7fbdbd4bb7152aeffffffff04" +
+                "d3b11400000000001976a914904a49878c0adfc3aa05de7afad2cc15f483a56a88ac7f40090000" +
+                "0000001976a914418327e3f3dda4cf5b9089325a4b95abdfa0334088ac722c0c00000000001976" +
+                "a914ba35042cfe9fc66fd35ac2224eebdafd1028ad2788acdc4ace020000000017a91474d691da" +
+                "1574e6b3c192ecfb52cc8984ee7b6c568700000000";
+        String hex_sec = "03b287eaf122eea69030a0e9feed096bed8045c8b98bec453e1ffac7fbdbd4bb71";
+        String hex_der = "3045022100da6bee3c93766232079a01639d07fa869598749729ae323eab8ee" +
+                "f53577d611b02207bef15429dcadce2121ea07f233115c6f09034c0be68db99980b9a6c5e754022";
+        String hex_redeem_script = "475221022626e955ea6ea6d98850c994f9107b036b1334f18ca88" +
+                "30bfff1295d21cfdb702103b287eaf122eea69030a0e9feed096bed8045c8b98bec453e1ffac7f" +
+                "bdbd4bb7152ae";
+        Tx tx_obj = Tx.parse(new ByteArrayInputStream(hexFormat.parseHex(hex_tx)));
+        Script redeem_script = Script.parse(new ByteArrayInputStream(hexFormat.parseHex(hex_redeem_script)));
+        byte[] s = Arrays.concatenate(EndianUtils.intToLittleEndian(tx_obj.getVersion(), 4), EndianUtils.encodeVarInt(tx_obj.getTxIns().length));
+        TxIn i = tx_obj.getTxIns()[0];
+        s = Arrays.concatenate(s, new TxIn(i.getPrevTx(), i.getPrevIndex(), redeem_script, i.getSequence()).serialize());
+        s = Arrays.concatenate(s, EndianUtils.encodeVarInt(tx_obj.getTxOuts().length));
+        for (TxOut o : tx_obj.getTxOuts()) {
+            s = Arrays.concatenate(s, o.serialize());
+        }
+        s = Arrays.concatenate(s, EndianUtils.intToLittleEndian(tx_obj.getLockTime(), 4));
+        s = Arrays.concatenate(s, EndianUtils.intToLittleEndian(Helper.SIGHASH_ALL, 4));
+        BigInteger z = BigIntegers.fromUnsignedByteArray(Helper.hash256(s));
+        S256Point point = S256Point.parse(hexFormat.parseHex(hex_sec));
+        Signature signature = Signature.parse(hexFormat.parseHex(hex_der));
+        assertTrue(point.verify(z, signature));
     }
 
 }

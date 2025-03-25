@@ -40,4 +40,18 @@ class HelperTest {
         assertEquals("1ec51b3654c1f1d0f4929d11a1f702937eaf50c8", HexFormat.of().formatHex(Helper.decode_base58("miKegze5FQNCnGw6PKyqUbYUeBa4x2hFeM")));
     }
 
+    @Test
+    void test_p2pkh_address() {
+        byte[] h160 = HexFormat.of().parseHex("74d691da1574e6b3c192ecfb52cc8984ee7b6c56");
+        assertEquals("1BenRpVUFK65JFWcQSuHnJKzc4M8ZP8Eqa", Helper.h160_to_p2pkh_address(h160, false));
+        assertEquals("mrAjisaT4LXL5MzE81sfcDYKU3wqWSvf9q", Helper.h160_to_p2pkh_address(h160, true));
+    }
+
+    @Test
+    void test_p2sh_address() {
+        byte[] h160 = HexFormat.of().parseHex("74d691da1574e6b3c192ecfb52cc8984ee7b6c56");
+        assertEquals("3CLoMMyuoDQTPRD3XYZtCvgvkadrAdvdXh", Helper.h160_to_p2sh_address(h160, false));
+        assertEquals("2N3u1R6uwQfuobCqbCgBkpsgBxvr1tZpe7B", Helper.h160_to_p2sh_address(h160, true));
+
+    }
 }
