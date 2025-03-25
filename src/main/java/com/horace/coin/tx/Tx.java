@@ -1,17 +1,20 @@
 package com.horace.coin.tx;
 
-import com.horace.coin.ecc.Helper;
+import com.horace.coin.Helper;
+import com.horace.coin.ecc.PrivateKey;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.math.BigInteger;
 
 @Getter
 @AllArgsConstructor
@@ -50,14 +53,6 @@ public class Tx implements Serializable {
         return Hex.toHexString(hash());
     }
 
-    /*
-    public static Tx parse(byte[] data) {
-        final TxBuilder txBuilder = new TxBuilder();
-        txBuilder.version((int) EndianUtils.littleEndianToInt(Arrays.copyOfRange(data, 0, 4)));
-        return txBuilder.build();
-    }
-     */
-
     public static Tx parse(final InputStream in, final boolean testnet) throws IOException {
         final int version = (int) EndianUtils.littleEndianToInt(in.readNBytes(4));
         final int num_inputs = (int) EndianUtils.readVarInt(in);
@@ -87,6 +82,56 @@ public class Tx implements Serializable {
             output_sum += txOut.amount();
         }
         return input_sum - output_sum;
+    }
+
+    public BigInteger sig_hash(int input_index) throws IOException {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            out.write(EndianUtils.intToLittleEndian(version, 4));
+            out.write(EndianUtils.encodeVarInt(txIns.length));
+            for (int i = 0; i < txIns.length; i++) {
+                final TxIn txIn = txIns[i];
+                if (i == input_index) {
+                    out.write(new TxIn(txIn.getPrevTx(), txIn.getPrevIndex(), txIn.scriptPubkey(testnet), txIn.getSequence()).serialize());
+                } else {
+                    out.write(new TxIn(txIn.getPrevTx(), txIn.getPrevIndex(), new Script(), txIn.getSequence()).serialize());
+                }
+            }
+            out.write(EndianUtils.encodeVarInt(txOuts.length));
+            for (TxOut txOut : txOuts) {
+                out.write(txOut.serialize());
+            }
+            out.write(EndianUtils.intToLittleEndian(lockTime, 4));
+            out.write(EndianUtils.intToLittleEndian(Helper.SIGHASH_ALL, 4));
+            byte[] h256 = Helper.hash256(out.toByteArray());
+            return BigIntegers.fromUnsignedByteArray(h256);
+        }
+    }
+
+    @SneakyThrows
+    public boolean verify_input(int input_index) {
+        TxIn txIn = txIns[input_index];
+        Script script_pubkey = txIn.scriptPubkey(testnet);
+        BigInteger z = sig_hash(input_index);
+        Script combined = txIn.getScriptSig().add(script_pubkey);
+        return combined.evaluate(z);
+    }
+
+    public boolean verify() {
+        if (fee() < 0) return false;
+        for (int i = 0 ; i < txIns.length ; i++) {
+            if (!verify_input(i)) return false;
+        }
+        return true;
+    }
+
+    @SneakyThrows
+    public boolean sign_input(int input_index, PrivateKey privateKey) {
+        BigInteger z = sig_hash(input_index);
+        byte[] der = privateKey.sign(z).der();
+        byte[] sig = Arrays.concatenate(der, new byte[]{(byte) Helper.SIGHASH_ALL});
+        byte[] sec = privateKey.getPoint().sec();
+        txIns[input_index].setScriptSig(new Script(sig, sec));
+        return verify_input(input_index);
     }
 
 }

@@ -1,5 +1,6 @@
 package com.horace.coin.ecc;
 
+import com.horace.coin.Helper;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.bouncycastle.crypto.digests.SHA256Digest;

@@ -6,16 +6,17 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.Map;
 
 public class TxFetcher {
 
     private static final Map<String, Tx> cache = new HashMap<>();
     private static final OkHttpClient client = new OkHttpClient();
+    private static final HexFormat hexFormat = HexFormat.of();
 
     public static String getUrl(final boolean testnet) {
         return testnet ? "https://blockstream.info/testnet/api/" : "https://blockstream.info/api/";
@@ -32,7 +33,8 @@ public class TxFetcher {
                     .url(urlBuilder.build() )
                     .build();
             try (Response response = client.newCall(request).execute()) {
-                byte[] raw = Hex.decode(response.body().string().trim());
+                String body = response.body().string().trim();
+                byte[] raw = hexFormat.parseHex(body);
                 if (raw[4] == 0) {
                     raw = Arrays.concatenate(Arrays.copyOf(raw, 4), Arrays.copyOfRange(raw, 6, raw.length));
                 }
@@ -48,6 +50,10 @@ public class TxFetcher {
 
     public static Tx fetch(final String tx_id, final boolean testnet) {
         return fetch(tx_id, testnet, false);
+    }
+
+    public static Tx fetch(final String tx_id) {
+        return fetch(tx_id, false, false);
     }
 
 }

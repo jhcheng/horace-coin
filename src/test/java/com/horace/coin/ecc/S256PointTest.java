@@ -1,11 +1,13 @@
 package com.horace.coin.ecc;
 
+import lombok.SneakyThrows;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class S256PointTest {
 
@@ -103,5 +105,16 @@ class S256PointTest {
     void address3() {
         final PrivateKey privateKey = new PrivateKey(new BigInteger("12345deadbeef", 16));
         assertEquals("1F1Pn2y6pDb68E5nYJJeba4TLg2U7B6KF1", privateKey.getPoint().address(true, false));
+    }
+
+    @SneakyThrows
+    @Test
+    void verify() {
+        S256Point point = S256Point.parse(Hex.decode("0349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278a"));
+        Signature signature = Signature.parse(Hex.decode("3045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031c" +
+                "cfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9" +
+                "c8e10615bed"));
+        BigInteger z = new BigInteger("27e0c5994dec7824e56dec6b2fcb342eb7cdb0d0957c2fce9882f715e85d81a6", 16);
+        assertTrue(point.verify(z, signature));
     }
 }

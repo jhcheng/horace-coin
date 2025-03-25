@@ -1,5 +1,6 @@
 package com.horace.coin.ecc;
 
+import com.horace.coin.Helper;
 import org.bouncycastle.util.BigIntegers;
 
 import java.math.BigInteger;
@@ -39,7 +40,7 @@ public class S256Point extends FieldElementPoint {
     }
 
     public byte[] sec() {
-        return sec(false);
+        return sec(true);
     }
 
     public byte[] sec(final boolean compressed) {
@@ -67,7 +68,7 @@ public class S256Point extends FieldElementPoint {
             return new S256Point(BigIntegers.fromUnsignedByteArray(sec_bin, 1, 32), BigIntegers.fromUnsignedByteArray(sec_bin, 33, 32));
         }
         final boolean is_even = sec_bin[0] == 0x02;
-        final S256Field x = new S256Field(BigIntegers.fromUnsignedByteArray(sec_bin, 1, 64));
+        final S256Field x = new S256Field(BigIntegers.fromUnsignedByteArray(sec_bin, 1, sec_bin.length - 1));
         final FieldElement alpha = x.pow(BigInteger.valueOf(3)).add(S256Constant.B);
         final FieldElement beta = alpha.sqrt();
         final S256Field even_beta;

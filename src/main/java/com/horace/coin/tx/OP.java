@@ -1,6 +1,6 @@
 package com.horace.coin.tx;
 
-import com.horace.coin.ecc.Helper;
+import com.horace.coin.Helper;
 import com.horace.coin.ecc.S256Point;
 import com.horace.coin.ecc.Signature;
 import lombok.SneakyThrows;

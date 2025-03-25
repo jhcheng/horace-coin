@@ -1,20 +1,35 @@
 package com.horace.coin.tx;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HexFormat;
 
 /**
- * @param prevTx    prev_tx is 32 bytes, little endian
- * @param prevIndex prev_index is an integer in 4 bytes, little endian
- * @param scriptSig use Script.parse to get the ScriptSig
- * @param sequence  sequence is an integer in 4 bytes, little-endian
+ * prev_tx is 32 bytes, little endian
+ * prev_index is an integer in 4 bytes, little endian
+ * use Script.parse to get the ScriptSig
+ * sequence is an integer in 4 bytes, little-endian
  */
-public record TxIn(byte[] prevTx, int prevIndex, Script scriptSig, int sequence) {
+@AllArgsConstructor
+@Getter
+public class TxIn {
+
+    private final byte[] prevTx;
+    private final int prevIndex;
+    @Setter
+    private Script scriptSig;
+    private final long sequence;
+
+    public TxIn(byte[] prevTx, int prevIndex) {
+        this(prevTx, prevIndex, new Script(),  4294967295L);
+    }
 
     @SneakyThrows
     public static TxIn psrse(final InputStream s) {
@@ -36,7 +51,8 @@ public record TxIn(byte[] prevTx, int prevIndex, Script scriptSig, int sequence)
     }
 
     public Tx fetchTx(final boolean testnet) {
-        return TxFetcher.fetch(Hex.toHexString(prevTx), testnet);
+        HexFormat hexFormat = HexFormat.of();
+        return TxFetcher.fetch(hexFormat.formatHex(prevTx), testnet);
     }
 
     public long value(final boolean testnet) {

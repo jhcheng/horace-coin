@@ -2,7 +2,6 @@ package com.horace.coin.tx;
 
 import lombok.SneakyThrows;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -10,6 +9,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Stack;
 import java.util.stream.Collectors;
@@ -61,7 +61,7 @@ public record Script(byte[]... cmds) {
     public byte[] raw_serialize() throws Exception {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             for (byte[] cmd : cmds) {
-                if (isOPCode(cmd) > 0) {
+                if (isOPCode(cmd) >= 0) {
                     out.write(EndianUtils.intToLittleEndian(cmd[0], 1));
                 } else {
                     int len = cmd.length;
@@ -155,8 +155,13 @@ public record Script(byte[]... cmds) {
         return -1;
     }
 
+    public static Script p2pkh_script(byte[] h160) {
+        return new Script(new byte[]{0x76}, new byte[]{(byte) 0xa9}, h160, new byte[]{(byte) 0x88}, new byte[]{(byte) 0xac});
+    }
+
     @Override
     public String toString() {
+        HexFormat hex = HexFormat.of();
         ArrayList<String> list = new ArrayList<>();
         for (byte[] cmd : cmds) {
             if (cmd.length == 1 && Byte.toUnsignedInt(cmd[0]) >= 78) {
@@ -168,7 +173,7 @@ public record Script(byte[]... cmds) {
                     list.add(String.format("OP_[%d]", code));
                 }
             } else {
-                list.add(Hex.toHexString(cmd));
+                list.add(hex.formatHex(cmd));
             }
         }
         return String.join(" ", list);
