@@ -20,7 +20,8 @@ public class FieldElementPoint {
         this.a = a;
         this.b = b;
         if (!(x.equals(x.none()) && y.equals(y.none()))) {
-            if (!onCurve(x, y, a, b)) throw new ArithmeticException(String.format("(%s, %s) is not on the curve", x, y));
+            if (!onCurve(x, y, a, b))
+                throw new ArithmeticException(String.format("(%s, %s) is not on the curve", x, y));
         }
     }
 

@@ -41,7 +41,8 @@ public class FieldElement {
     }
 
     public FieldElement mul(final FieldElement other) {
-        if (!prime.equals(other.prime)) throw new ArithmeticException("Cannot sub multiply numbers in different Fields");
+        if (!prime.equals(other.prime))
+            throw new ArithmeticException("Cannot sub multiply numbers in different Fields");
         return new FieldElement(num.multiply(other.num).mod(prime), prime);
     }
 

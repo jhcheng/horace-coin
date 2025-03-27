@@ -131,7 +131,7 @@ public class Tx implements Serializable {
 
     public boolean verify() {
         if (fee() < 0) return false;
-        for (int i = 0 ; i < txIns.length ; i++) {
+        for (int i = 0; i < txIns.length; i++) {
             if (!verify_input(i)) return false;
         }
         return true;

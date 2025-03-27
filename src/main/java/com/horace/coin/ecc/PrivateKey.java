@@ -75,7 +75,7 @@ public class PrivateKey {
             //  k = hmac.new(k, v + b'\x00', s256).digest()
             //  v = hmac.new(k, v, s256).digest()
             hmac.update(v, 0, v.length);
-            hmac.update((byte)0x00);
+            hmac.update((byte) 0x00);
             hmac.doFinal(k, 0);
             hmac.init(new KeyParameter(k));
             hmac.update(v, 0, v.length);

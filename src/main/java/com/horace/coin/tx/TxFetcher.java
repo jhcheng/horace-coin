@@ -35,7 +35,7 @@ public class TxFetcher {
                     .addPathSegment(tx_id)
                     .addPathSegment("hex");
             Request request = new Request.Builder()
-                    .url(urlBuilder.build() )
+                    .url(urlBuilder.build())
                     .build();
             try (Response response = client.newCall(request).execute()) {
                 String body = response.body().string().trim();

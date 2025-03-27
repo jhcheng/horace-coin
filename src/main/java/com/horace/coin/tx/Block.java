@@ -10,8 +10,7 @@ import java.nio.ByteBuffer;
 
 public record Block(int version, byte[] prevBlock, byte[] merkleRoot, int timestamp, byte[] bits, byte[] nonce) {
 
-    public static Block parse(byte[] block) {
-        ByteBuffer buffer = ByteBuffer.wrap(block);
+    public static Block parse(ByteBuffer buffer) {
         byte[] tmp = new byte[4];
         buffer.get(tmp, 0, 4);
         int version = EndianUtils.littleEndianToInt(tmp).intValue();
@@ -25,7 +24,11 @@ public record Block(int version, byte[] prevBlock, byte[] merkleRoot, int timest
         buffer.get(bits, 0, 4);
         byte[] nonce = new byte[4];
         buffer.get(nonce, 0, 4);
-        return new Block(version, Arrays.reverse(prevBlock) , Arrays.reverse(merkleRoot), timestamp, bits, nonce);
+        return new Block(version, Arrays.reverse(prevBlock), Arrays.reverse(merkleRoot), timestamp, bits, nonce);
+    }
+
+    public static Block parse(byte[] block) {
+        return parse(ByteBuffer.wrap(block));
     }
 
     public byte[] serialize() {

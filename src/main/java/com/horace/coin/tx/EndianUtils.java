@@ -6,6 +6,7 @@ import org.bouncycastle.util.BigIntegers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 
 public class EndianUtils {
 
@@ -19,6 +20,24 @@ public class EndianUtils {
 
     public static BigInteger littleEndianToInt(byte[] bytes) {
         return BigIntegers.fromUnsignedByteArray(Arrays.reverse(bytes));
+    }
+
+    public static long readVarInt(ByteBuffer buffer) {
+        final byte i = buffer.get();
+        byte[] value;
+        if (i == (byte) 0xfd) {
+            value = new byte[2];
+            buffer.get(value);
+        } else if (i == (byte) 0xfe) {
+            value = new byte[4];
+            buffer.get(value);
+        } else if (i == (byte) 0xff) {
+            value = new byte[8];
+            buffer.get(value);
+        } else {
+            value = new byte[]{i};
+        }
+        return BigIntegers.fromUnsignedByteArray(value).longValue();
     }
 
     public static long readVarInt(final InputStream in) throws IOException {

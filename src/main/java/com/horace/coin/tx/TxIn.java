@@ -9,6 +9,7 @@ import org.bouncycastle.util.Arrays;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.HexFormat;
 
 /**
@@ -28,7 +29,7 @@ public class TxIn {
     private final long sequence;
 
     public TxIn(byte[] prevTx, int prevIndex) {
-        this(prevTx, prevIndex, new Script(),  4294967295L);
+        this(prevTx, prevIndex, new Script(), 4294967295L);
     }
 
     @SneakyThrows
@@ -38,6 +39,12 @@ public class TxIn {
         final Script sig = Script.parse(s);
         final int sequence = EndianUtils.littleEndianToInt(s.readNBytes(4)).intValue();
         return new TxIn(prevTx, prevIndex, sig, sequence);
+    }
+
+    public static TxIn psrse(ByteBuffer buffer) {
+        final byte[] prevTx = new byte[32];
+        buffer.get(prevTx);
+
     }
 
     public byte[] serialize() throws IOException {
