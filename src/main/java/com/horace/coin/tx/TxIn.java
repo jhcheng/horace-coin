@@ -41,12 +41,6 @@ public class TxIn {
         return new TxIn(prevTx, prevIndex, sig, sequence);
     }
 
-    public static TxIn psrse(ByteBuffer buffer) {
-        final byte[] prevTx = new byte[32];
-        buffer.get(prevTx);
-
-    }
-
     public byte[] serialize() throws IOException {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             baos.write(Arrays.reverse(prevTx));
