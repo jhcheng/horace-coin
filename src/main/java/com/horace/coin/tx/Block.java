@@ -1,6 +1,9 @@
 package com.horace.coin.tx;
 
 import com.horace.coin.Helper;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.bouncycastle.util.Arrays;
 
 import java.math.BigDecimal;
@@ -8,7 +11,19 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 
-public record Block(int version, byte[] prevBlock, byte[] merkleRoot, int timestamp, byte[] bits, byte[] nonce) {
+@RequiredArgsConstructor
+@Getter
+public class Block {
+
+    private final int version;
+    private final byte[] prevBlock;
+    private final byte[] merkleRoot;
+    private final int timestamp;
+    private final byte[] bits;
+    private final byte[] nonce;
+
+    @Setter
+    private byte[][] txHashes = null;
 
     public static Block parse(ByteBuffer buffer) {
         byte[] tmp = new byte[4];
@@ -71,4 +86,11 @@ public record Block(int version, byte[] prevBlock, byte[] merkleRoot, int timest
         BigInteger proof = EndianUtils.littleEndianToInt(Helper.hash256(serialize()));
         return proof.compareTo(target()) < 0;
     }
+
+    public boolean validate_merkle_root() {
+        byte[][] rev_tx_hashes = java.util.Arrays.stream(txHashes).map(Arrays::reverse).toArray(byte[][]::new);
+        byte[] root = Arrays.reverse(Helper.merkle_root(rev_tx_hashes));
+        return Arrays.areEqual(root, merkleRoot);
+    }
+
 }

@@ -7,8 +7,10 @@ import org.bouncycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HexFormat;
+import java.util.List;
 
 public class Helper {
 
@@ -172,6 +174,67 @@ public class Helper {
 
         // Convert new target back to bits
         return targetToBits(newTarget);
+    }
+
+    public static byte[] concat(byte[] a, byte[] b) {
+        byte[] c = new byte[a.length + b.length];
+        System.arraycopy(a, 0, c, 0, a.length);
+        System.arraycopy(b, 0, c, a.length, b.length);
+        return c;
+    }
+
+    public static byte[] merkle_parent(byte[] left, byte[] right) {
+        return hash256(concat(left, right));
+    }
+
+    public static byte[][] merkle_parent_level(byte[][] hashes) {
+        if (hashes.length == 1) {
+            throw new RuntimeException("Cannot take a parent level with only 1 item");
+        }
+        if (hashes.length % 2 == 1) {
+            hashes = Arrays.copyOf(hashes, hashes.length + 1);
+            hashes[hashes.length - 1] = hashes[hashes.length - 2];
+        }
+        List<byte[]> parent_level = new ArrayList<>();
+        for (int i = 0; i < hashes.length; i = i + 2) {
+            parent_level.add(merkle_parent(hashes[i], hashes[i + 1]));
+        }
+        return parent_level.toArray(new byte[0][]);
+    }
+
+    public static byte[] merkle_root(byte[][] hashes) {
+        byte[][] current_hashes = hashes;
+        while (current_hashes.length > 1) {
+            current_hashes = merkle_parent_level(current_hashes);
+        }
+        return current_hashes[0];
+    }
+
+    public static byte[] bit_field_to_bytes(byte[] bit_field) {
+        if (bit_field.length % 8 != 0) {
+            throw new RuntimeException("bit_field does not have a length that is divisible by 8");
+        }
+        byte[] result = new byte[bit_field.length / 8];
+        for (int i = 0; i < bit_field.length; i++) {
+            int byteIndex = i / 8;
+            int bitIndex = i % 8;
+            if (bit_field[i] == 1) {
+                result[byteIndex] |= (1 << bitIndex);
+            }
+        }
+        return result;
+    }
+
+    public static byte[] bytes_to_bit_field(byte[] bytes) {
+        byte[] flag_bits = new byte[bytes.length * 8];
+        for (int i = 0; i < bytes.length; i++) {
+            byte b = bytes[i];
+            for (int j = 0; j < 8; j++) {
+                flag_bits[i * 8 + j] = (byte) (b & 1);
+                b >>= 1;
+            }
+        }
+        return flag_bits;
     }
 
 }
