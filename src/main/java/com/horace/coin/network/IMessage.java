@@ -6,16 +6,26 @@ import java.io.IOException;
 
 public interface IMessage {
 
+    int TX_DATA_TYPE = 1;
+    int BLOCK_DATA_TYPE = 2;
+    int FILTERED_BLOCK_DATA_TYPE = 3;
+    int COMPACT_BLOCK_DATA_TYPE = 4;
+
     String GET_HEADERS_COMMAND = "getheaders";
     String HEADERS_COMMAND = "headers";
     String PING_COMMAND = "ping";
     String PONG_COMMAND = "pong";
     String VER_ACK_COMMAND = "verack";
     String VERSION_COMMAND = "version";
+    String GET_DATA_COMMAND = "version";
 
     byte[] serialize();
 
     String getCommand();
+
+    default GenericMessage getGenericMessage() {
+        return new GenericMessage(getCommand(), serialize());
+    }
 
     @Log
     class MessageParser {

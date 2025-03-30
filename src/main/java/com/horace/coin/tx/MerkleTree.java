@@ -3,8 +3,6 @@ package com.horace.coin.tx;
 import com.horace.coin.Helper;
 import lombok.Getter;
 
-import java.util.Arrays;
-
 public class MerkleTree {
 
     private int current_depth = 0;
