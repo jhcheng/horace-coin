@@ -37,7 +37,7 @@ public class EndianUtils {
         } else {
             value = new byte[]{i};
         }
-        return BigIntegers.fromUnsignedByteArray(value).longValue();
+        return EndianUtils.littleEndianToInt(value).longValue();
     }
 
     public static long readVarInt(final InputStream in) throws IOException {

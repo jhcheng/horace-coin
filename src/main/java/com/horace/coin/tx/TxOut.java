@@ -2,9 +2,7 @@ package com.horace.coin.tx;
 
 import lombok.SneakyThrows;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.nio.ByteBuffer;
 
 /**
  * @param amount # amount is an integer in 8 bytes, little endian
@@ -13,15 +11,17 @@ import java.io.InputStream;
 public record TxOut(long amount, Script scriptPubkey) {
 
     @SneakyThrows
-    public static TxOut parse(final InputStream s) {
-        return new TxOut(EndianUtils.littleEndianToInt(s.readNBytes(8)).longValueExact(), Script.parse(s));
+    public static TxOut parse(final ByteBuffer buffer) {
+        byte[] eightBytes = new byte[8];
+        buffer.get(eightBytes);
+        return new TxOut(EndianUtils.littleEndianToInt(eightBytes).longValueExact(), Script.parse(buffer));
     }
 
-    public byte[] serialize() throws IOException {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            baos.write(EndianUtils.intToLittleEndian(amount, 8));
-            baos.write(scriptPubkey.serialize());
-            return baos.toByteArray();
-        }
+    public byte[] serialize() {
+        byte[] key = scriptPubkey.serialize();
+        ByteBuffer buffer = ByteBuffer.allocate(key.length + 8);
+        buffer.put(EndianUtils.intToLittleEndian(amount, 8));
+        buffer.put(key);
+        return buffer.array();
     }
 }

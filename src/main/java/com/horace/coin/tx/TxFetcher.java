@@ -8,6 +8,7 @@ import okhttp3.Response;
 import org.bouncycastle.util.Arrays;
 
 import java.io.ByteArrayInputStream;
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.HexFormat;
@@ -43,7 +44,7 @@ public class TxFetcher {
                 if (raw[4] == 0) {
                     raw = Arrays.concatenate(Arrays.copyOf(raw, 4), Arrays.copyOfRange(raw, 6, raw.length));
                 }
-                Tx tx = Tx.parse(new ByteArrayInputStream(raw), testnet);
+                Tx tx = Tx.parse(ByteBuffer.wrap(raw), testnet);
                 if (!tx.id().equals(tx_id)) {
                     throw new RuntimeException(String.format("tx id mismatch, tx_id: %s vs tx.id: %s", tx_id, tx.id()));
                 }

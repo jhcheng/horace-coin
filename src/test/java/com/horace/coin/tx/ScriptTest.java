@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 
@@ -19,8 +20,8 @@ class ScriptTest {
     @SneakyThrows
     @Test
     void parse() {
-        final InputStream in = new ByteArrayInputStream(hexFormat.parseHex("6a47304402207899531a52d59a6de200179928ca900254a36b8dff8bb75f5f5d71b1cdc26125022008b422690b8461cb52c3cc30330b23d574351872b7c361e9aae3649071c1a7160121035d5c93d9ac96881f19ba1f686f15f009ded7c62efe85a872e6a19b43c15a2937"));
-        final Script script = Script.parse(in);
+        byte[] bytes = hexFormat.parseHex("6a47304402207899531a52d59a6de200179928ca900254a36b8dff8bb75f5f5d71b1cdc26125022008b422690b8461cb52c3cc30330b23d574351872b7c361e9aae3649071c1a7160121035d5c93d9ac96881f19ba1f686f15f009ded7c62efe85a872e6a19b43c15a2937");
+        final Script script = Script.parse(ByteBuffer.wrap(bytes));
         assertEquals(hexFormat.formatHex(script.cmds()[0]), "304402207899531a52d59a6de200179928ca900254a36b8dff8bb75f5f5d71b1cdc26125022008b422690b8461cb52c3cc30330b23d574351872b7c361e9aae3649071c1a71601");
         assertArrayEquals(script.cmds()[1], hexFormat.parseHex("035d5c93d9ac96881f19ba1f686f15f009ded7c62efe85a872e6a19b43c15a2937"));
     }
@@ -29,14 +30,14 @@ class ScriptTest {
     @SneakyThrows
     void serialize() {
         final String want = "6a47304402207899531a52d59a6de200179928ca900254a36b8dff8bb75f5f5d71b1cdc26125022008b422690b8461cb52c3cc30330b23d574351872b7c361e9aae3649071c1a7160121035d5c93d9ac96881f19ba1f686f15f009ded7c62efe85a872e6a19b43c15a2937";
-        final Script script = Script.parse(new ByteArrayInputStream(hexFormat.parseHex(want)));
+        final Script script = Script.parse(ByteBuffer.wrap(hexFormat.parseHex(want)));
         assertEquals(want, hexFormat.formatHex(script.serialize()));
     }
 
     @SneakyThrows
     @Test
     void parse_02() {
-        final Script script = Script.parse(new ByteArrayInputStream(hexFormat.parseHex("6b483045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccf" +
+        final Script script = Script.parse(ByteBuffer.wrap(hexFormat.parseHex("6b483045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccf" +
                 "cf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8" +
                 "e10615bed01210349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278a")));
         assertEquals("3045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccfcf21320b0277457c98f0220" +
@@ -47,7 +48,7 @@ class ScriptTest {
     @SneakyThrows
     @Test
     void parse_03() {
-        final Script script = Script.parse(new ByteArrayInputStream(hexFormat.parseHex("4d04ffff001d0104455468652054696d6573203033" +
+        final Script script = Script.parse(ByteBuffer.wrap(hexFormat.parseHex("4d04ffff001d0104455468652054696d6573203033" +
                 "2f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64" +
                 "206261696c6f757420666f722062616e6b73")));
         assertEquals("The Times 03/Jan/2009 Chancellor on brink of second bailout for banks", new String(script.cmds()[2], StandardCharsets.UTF_8));
@@ -78,7 +79,7 @@ class ScriptTest {
     @SneakyThrows
     @Test
     void evaluate_02() {
-        Script script_pubkey = Script.parse(new ByteArrayInputStream(Arrays.concatenate(EndianUtils.encodeVarInt(8), hexFormat.parseHex("6e879169a77ca787"))));
+        Script script_pubkey = Script.parse(ByteBuffer.wrap(Arrays.concatenate(EndianUtils.encodeVarInt(8), hexFormat.parseHex("6e879169a77ca787"))));
         byte[] collision1 = hexFormat.parseHex("255044462d312e330a25e2e3cfd30a0a0a312030206f626a0a3c3c2f576964746820" +
                 "32203020522f4865696768742033203020522f547970652034203020522f537562747970652035" +
                 "203020522f46696c7465722036203020522f436f6c6f7253706163652037203020522f4c656e67" +
